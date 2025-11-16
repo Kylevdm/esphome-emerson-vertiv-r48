@@ -2,67 +2,75 @@ esphome:
   name: "esphome-emerson"
   friendly_name: Emerson_Vertiv_R48
 
+esp32:
+  board: node32s
+  framework:
+    type: esp-idf
+
 external_components:
-  - source: github://leodesigner/esphome-emerson-vertiv-r48
-#    refresh: 0s
+  - source: github://IxioJo/esphome-emerson-vertiv-r48
+    refresh: 0s
 
-esp8266:
-  board: esp01_1m
-
-# Enable logging
 logger:
-#  level: DEBUG
-#  logs:
-#    canbus: INFO
+  level: INFO
 
-# Enable Home Assistant API
-#api:
-
+# Add API for stable Home Assistant integration
+api:
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Esphome-Emerson"
     password: "qwertyzxc"
 
 ota:
-  password: !secret ota_password
+ - platform: esphome
+   password: "ota_password"
 
-#web_server:
 captive_portal:
 
 mqtt:
-  broker: !secret mqtt_host
-  #username: !secret mqtt_username
-  #password: !secret mqtt_password
+  broker: 172.16.20.153
+  username: r48v2l
+  password: mqtt_password_r48v2l
+  client_id: emerson_r48_3000e3
   id: mqtt_client
   topic_prefix: eh/emerson
-
+  discovery: true                 # Enable MQTT discovery
+  discovery_prefix: homeassistant # Standard HA discovery prefix
+  discovery_retain: true          # Retain discovery messages
+  keepalive: 60s                  # Increase keepalive for stability
+  reboot_timeout: 0s              # Don't reboot on MQTT disconnect
+  birth_message:
+    topic: eh/emerson/status
+    payload: online
+    retain: true
+  will_message:
+    topic: eh/emerson/status
+    payload: offline
+    retain: true
 
 spi:
-  id: McpSpi
-  clk_pin: GPIO14
-  mosi_pin: GPIO13
-  miso_pin: GPIO12
+  - id: McpSpi
+    clk_pin: GPIO18
+    mosi_pin: GPIO23
+    miso_pin: GPIO19
 
 canbus:
   - platform: mcp2515
     id: can
     spi_id: McpSpi
     use_extended_id: true
-    cs_pin: GPIO15
+    cs_pin: GPIO5
     can_id: 0x0607FF83
     bit_rate: 125kbps
     mode: NORMAL
-    data_rate: 10Mhz
-
+    # data_rate: 10Mhz  # Removed - not a valid parameter
 
 emerson_r48:
   canbus_id: can
-  update_interval: 1s
+  update_interval: 3s  # Increased from 1s to reduce CAN traffic
 
 sensor:
   - platform: emerson_r48
@@ -76,7 +84,6 @@ sensor:
       name: AC Voltage
     max_output_current:
       name: DC max current
-
 
 number:
   - platform: emerson_r48
@@ -104,5 +111,3 @@ switch:
       name: "FAN switch MAX"
     led_sw:
       name: "LED switch"
-
-      
