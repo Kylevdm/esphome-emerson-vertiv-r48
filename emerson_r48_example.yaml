@@ -13,8 +13,10 @@ external_components:
 
 logger:
   level: INFO
+  logs:
+    canbus: WARN
+    emerson_r48: INFO
 
-# Add API for stable Home Assistant integration
 api:
 
 wifi:
@@ -31,17 +33,17 @@ ota:
 captive_portal:
 
 mqtt:
-  broker: 172.16.20.153
-  username: r48v2l
-  password: mqtt_password_r48v2l
+  broker: !secret mqtt_host
+  username: !secret mqtt_v2l
+  password: !secret mqtt_pass_v2l
   client_id: emerson_r48_3000e3
   id: mqtt_client
   topic_prefix: eh/emerson
-  discovery: true                 # Enable MQTT discovery
-  discovery_prefix: homeassistant # Standard HA discovery prefix
-  discovery_retain: true          # Retain discovery messages
-  keepalive: 60s                  # Increase keepalive for stability
-  reboot_timeout: 0s              # Don't reboot on MQTT disconnect
+  discovery: true                 
+  discovery_prefix: homeassistant 
+  discovery_retain: true          
+  keepalive: 60s                  
+  reboot_timeout: 0s              
   birth_message:
     topic: eh/emerson/status
     payload: online
@@ -66,11 +68,10 @@ canbus:
     can_id: 0x0607FF83
     bit_rate: 125kbps
     mode: NORMAL
-    # data_rate: 10Mhz  # Removed - not a valid parameter
 
 emerson_r48:
   canbus_id: can
-  update_interval: 3s  # Increased from 1s to reduce CAN traffic
+  update_interval: 5s
 
 sensor:
   - platform: emerson_r48
