@@ -55,13 +55,14 @@ void EmersonR48Component::gimme5(){
 
 
 void EmersonR48Component::setup() {
+  this->canbus_->register_listener(this);
   Automation<std::vector<uint8_t>, uint32_t, bool> *automation;
   LambdaAction<std::vector<uint8_t>, uint32_t, bool> *lambdaaction;
   canbus::CanbusTrigger *canbus_canbustrigger;
 
   // catch all received messages
   canbus_canbustrigger = new canbus::CanbusTrigger(this->canbus, 0, 0, true);
-  // canbus_canbustrigger->set_component_source("canbus");  // Commented for ESPHome 2025.x compatibility
+  canbus_canbustrigger->set_component_source("canbus");
   App.register_component(canbus_canbustrigger);
   automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(canbus_canbustrigger);
 auto cb = [=, this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
@@ -396,37 +397,40 @@ void EmersonR48Component::set_control(uint8_t msgv) {
 }
 
 void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data) {
-  // ... existing logging ...
-  this->lastUpdate_ = millis();  // <-- MOVE THIS TO TOP!
+  ESP_LOGD(TAG, "on_frame called: can_id=0x%x, CAN_ID_DATA=0x%x, match=%d", 
+           can_id, CAN_ID_DATA, (can_id == CAN_ID_DATA));
+  
   if (can_id == CAN_ID_DATA) {
-    uint32_t value = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
-    float conv_value = 0;
-    memcpy(&conv_value, &value, sizeof(conv_value));
+      ESP_LOGD(TAG, "MATCHED! Processing data...");
+      this->lastUpdate_ = millis();
+      uint32_t value = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
+      float conv_value = 0;
+      memcpy(&conv_value, &value, sizeof(conv_value));
     
-    // UPDATE: Refresh last update time for ANY valid data    
-    switch (data[3]) {
-      case EMR48_DATA_OUTPUT_V:
-        this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
-        break;
-      
-      case EMR48_DATA_OUTPUT_A:
-        this->publish_sensor_state_(this->output_current_sensor_, conv_value);
-        break;
-      
-      case EMR48_DATA_OUTPUT_AL:
-        conv_value = conv_value * 100.0;
-        this->publish_number_state_(this->max_output_current_number_, conv_value);
-        this->publish_sensor_state_(this->max_output_current_sensor_, conv_value);
-        break;
-      
-      case EMR48_DATA_OUTPUT_T:
-        this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
-        break;
-      
-      case EMR48_DATA_OUTPUT_IV:
-        this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
-        // REMOVED: this->lastUpdate_ = millis();  // <-- Now at top
-        break;
+  // UPDATE: Refresh last update time for ANY valid data    
+  switch (data[3]) {
+    case EMR48_DATA_OUTPUT_V:
+      this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
+      break;
+    
+    case EMR48_DATA_OUTPUT_A:
+      this->publish_sensor_state_(this->output_current_sensor_, conv_value);
+      break;
+    
+    case EMR48_DATA_OUTPUT_AL:
+      conv_value = conv_value * 100.0;
+      this->publish_number_state_(this->max_output_current_number_, conv_value);
+      this->publish_sensor_state_(this->max_output_current_sensor_, conv_value);
+      break;
+    
+    case EMR48_DATA_OUTPUT_T:
+      this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
+      break;
+    
+    case EMR48_DATA_OUTPUT_IV:
+      this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
+      // REMOVED: this->lastUpdate_ = millis();  // <-- Now at top
+      break;
     }
   }
 }
