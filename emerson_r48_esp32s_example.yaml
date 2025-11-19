@@ -99,6 +99,15 @@ button:
   - platform: emerson_r48
     set_offline_values:
       name: Set offline values
+    walk_in_enable:
+      name: "Enable Walk-in (10s ramp)"
+      walk_in_time: 10.0  # Time in seconds for voltage ramp-up
+    walk_in_disable:
+      name: "Disable Walk-in"
+    restart_overvoltage_enable:
+      name: "Enable Restart After Overvoltage"
+    restart_overvoltage_disable:
+      name: "Disable Restart After Overvoltage"
   - platform: restart
     name: "Restart ESP"
 
