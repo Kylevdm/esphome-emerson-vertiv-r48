@@ -18,6 +18,8 @@ class EmersonR48Component : public PollingComponent {
   void set_output_voltage(float value, bool offline = false);
   void set_max_output_current(float value, bool offline = false);
   void set_max_input_current(float value);
+  void set_walk_in(bool enable, float time = 0);
+  void set_restart_overvoltage(bool enable);
   void set_offline_values();
 
   void set_input_voltage_sensor(sensor::Sensor *input_voltage_sensor) { input_voltage_sensor_ = input_voltage_sensor; }
