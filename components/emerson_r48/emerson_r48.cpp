@@ -55,7 +55,6 @@ void EmersonR48Component::gimme5(){
 
 
 void EmersonR48Component::setup() {
-  this->canbus->register_listener(this);
   Automation<std::vector<uint8_t>, uint32_t, bool> *automation;
   LambdaAction<std::vector<uint8_t>, uint32_t, bool> *lambdaaction;
   canbus::CanbusTrigger *canbus_canbustrigger;
