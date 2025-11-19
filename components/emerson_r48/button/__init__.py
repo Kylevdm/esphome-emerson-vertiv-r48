@@ -97,6 +97,7 @@ async def to_code(config):
         await button.register_button(var, conf)
         cg.add(var.set_parent(hub))
         cg.add(var.set_enable(False))
+        cg.add(var.set_time(0.0))  # FIXED: Added missing time setting for disable
     
     if CONF_RESTART_OVERVOLTAGE_ENABLE in config:
         conf = config[CONF_RESTART_OVERVOLTAGE_ENABLE]
