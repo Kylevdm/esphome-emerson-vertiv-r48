@@ -34,8 +34,8 @@ captive_portal:
 
 mqtt:
   broker: !secret mqtt_host
-  username: !secret mqtt_v2l
-  password: !secret mqtt_pass_v2l
+  username: !secret mqtt
+  password: !secret mqtt_pass
   client_id: emerson_r48_3000e3
   id: mqtt_client
   topic_prefix: eh/emerson
