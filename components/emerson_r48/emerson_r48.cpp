@@ -30,10 +30,7 @@ static const uint8_t EMR48_CMD_WALK_IN = 0x9;
 static const uint8_t EMR48_CMD_RESTART_OVERVOLTAGE = 0xA;
 
 void EmersonR48Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
-  
-  this->canbus_->register_listener(this);
-  
+  ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");  
   // Initialize lastUpdate_ to current time to prevent immediate NaN
   this->lastUpdate_ = millis();
 }
@@ -151,7 +148,7 @@ void EmersonR48Component::request_data() {
   std::vector<uint8_t> data = {0x01, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   
   ESP_LOGD(TAG, "Requesting data from PSU");
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 // Voltage control
@@ -171,7 +168,7 @@ void EmersonR48Component::set_output_voltage(float voltage) {
   ESP_LOGD(TAG, "sent can_message.data: %02x %02x %02x %02x %02x %02x %02x %02x",
            data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
   
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 // Current control
@@ -192,7 +189,7 @@ void EmersonR48Component::set_max_output_current(float current) {
   ESP_LOGD(TAG, "sent can_message.data: %02x %02x %02x %02x %02x %02x %02x %02x",
            data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
   
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 void EmersonR48Component::set_max_input_current(float current) {
@@ -211,7 +208,7 @@ void EmersonR48Component::set_max_input_current(float current) {
   ESP_LOGD(TAG, "sent can_message.data: %02x %02x %02x %02x %02x %02x %02x %02x",
            data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
   
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 // Switch controls
@@ -229,7 +226,7 @@ void EmersonR48Component::ac_switch(bool state) {
   };
   
   ESP_LOGD(TAG, "Setting AC switch to %s", state ? "ON" : "OFF");
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 void EmersonR48Component::dc_switch(bool state) {
@@ -246,7 +243,7 @@ void EmersonR48Component::dc_switch(bool state) {
   };
   
   ESP_LOGD(TAG, "Setting DC switch to %s", state ? "ON" : "OFF");
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 void EmersonR48Component::fan_switch(bool state) {
@@ -263,7 +260,7 @@ void EmersonR48Component::fan_switch(bool state) {
   };
   
   ESP_LOGD(TAG, "Setting FAN switch to %s", state ? "MAX" : "AUTO");
-  this->canbus_->send_data(0x0607FF83, false, data);
+  this->canbus->send_data(0x0607FF83, false, data);
 }
 
 void EmersonR48Component::led_switch(bool state) {
@@ -280,4 +277,4 @@ void EmersonR48Component::led_switch(bool state) {
   };
   
   ESP_LOGD(TAG, "Setting LED switch to %s", state ? "ON" : "OFF");
-  this->canbus_
+  this->canbus
