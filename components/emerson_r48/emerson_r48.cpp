@@ -396,64 +396,43 @@ void EmersonR48Component::set_control(uint8_t msgv) {
 }
 
 void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data) {
-  // Create a buffer to hold the formatted string
-  // Each byte is represented by two hex digits and a space, +1 for null terminator
-  size_t length = data.size();
-  char buffer[3 * length + 1];
-
-  // Format the data into the buffer
-  size_t pos = 0;
-  for (size_t i = 0; i < length; ++i) {
-      pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
-  }
-
-  // Log the entire line
-  ESP_LOGD(TAG, "received can_message.data: %s", buffer);
+  // ... existing logging ...
 
   if (can_id == CAN_ID_DATA) {
     uint32_t value = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
     float conv_value = 0;
     memcpy(&conv_value, &value, sizeof(conv_value));
+    
+    // UPDATE: Refresh last update time for ANY valid data
+    this->lastUpdate_ = millis();  // <-- MOVE THIS TO TOP!
+    
     switch (data[3]) {
       case EMR48_DATA_OUTPUT_V:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output voltage: %f", conv_value);
         break;
-
+      
       case EMR48_DATA_OUTPUT_A:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_current_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output current: %f", conv_value);
         break;
-
+      
       case EMR48_DATA_OUTPUT_AL:
         conv_value = conv_value * 100.0;
         this->publish_number_state_(this->max_output_current_number_, conv_value);
         this->publish_sensor_state_(this->max_output_current_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output current limit: %f", conv_value);
         break;
-
+      
       case EMR48_DATA_OUTPUT_T:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
-        ESP_LOGV(TAG, "Temperature: %f", conv_value);
         break;
-
+      
       case EMR48_DATA_OUTPUT_IV:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input voltage: %f", conv_value);
-
-        this->lastUpdate_ = millis();
-        break;
-
-      default:
-        // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
+        // REMOVED: this->lastUpdate_ = millis();  // <-- Now at top
         break;
     }
   }
 }
+
 
 void EmersonR48Component::publish_sensor_state_(sensor::Sensor *sensor, float value) {
   if (sensor) {
