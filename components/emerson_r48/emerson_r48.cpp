@@ -76,71 +76,47 @@ auto cb = [=, this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmi
 }
 
 void EmersonR48Component::update() {
-  static uint8_t cnt = 0;
-  cnt++;
+  // Request all sensors every update - no cycling
+  ESP_LOGD(TAG, "Requesting output voltage message");
+  std::vector<uint8_t> msg1 = {0x00, 0x78, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_REQUEST, true, msg1);
 
-  if (cnt == 1) {
-    ESP_LOGD(TAG, "Requesting output voltage message");
-    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
-    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-  }
-  if (cnt == 2) {
-    ESP_LOGD(TAG, "Requesting output current message");
-    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00};
-    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-  }
-  if (cnt == 3) {
-    ESP_LOGD(TAG, "Requesting output current limit message");
-    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00};
-    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-  }
-  if (cnt == 4) {
-    ESP_LOGD(TAG, "Requesting temperature (C) message");
-    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
-    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-  }
-  if (cnt == 5) {
-    ESP_LOGD(TAG, "Requesting supply voltage message");
-    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00};
-    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-  }
-//  if (cnt == 6) {
-//    ESP_LOGD(TAG, "Requesting all 5 message");
-//    std::vector<uint8_t> data = {0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00};
-//    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-//  }
+  ESP_LOGD(TAG, "Requesting output current message");
+  std::vector<uint8_t> msg2 = {0x00, 0x78, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_REQUEST, true, msg2);
 
-  if (cnt == 6) { 
-    cnt = 0; 
-    // send control every 10 seconds
-    uint8_t msgv = this->dcOff_ << 7 | this->fanFull_ << 4 | this->flashLed_ << 3 | this->acOff_ << 2 | 1;
-    this->set_control(msgv);
+  ESP_LOGD(TAG, "Requesting output current limit message");
+  std::vector<uint8_t> msg3 = {0x00, 0x78, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_REQUEST, true, msg3);
 
-    if (millis() - this->lastCtlSent_ > 10000) {
+  ESP_LOGD(TAG, "Requesting temperature C message");
+  std::vector<uint8_t> msg4 = {0x00, 0x78, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_REQUEST, true, msg4);
 
-      this->lastCtlSent_ = millis();
-    }
-  }
+  ESP_LOGD(TAG, "Requesting supply voltage message");
+  std::vector<uint8_t> msg5 = {0x00, 0x78, 0x04, 0x05, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_REQUEST, true, msg5);
 
+  // Send control/sync messages
+  std::vector<uint8_t> data = {0x00, 0xF0, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00};
+  this->canbus->send_data(CAN_ID_SET_CTL, true, data);
+  ESP_LOGD(TAG, "sent control can_message.data: %s", format_hex_pretty(data).c_str());
 
-  // no new value for 5* intervall -> set sensors to NAN)
+  // Publish NaN if no updates received
   if (millis() - lastUpdate_ > this->update_interval_ * 10 && cnt == 0) {
-    this->publish_sensor_state_(this->input_power_sensor_, NAN);
     this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
-    this->publish_sensor_state_(this->input_current_sensor_, NAN);
-    this->publish_sensor_state_(this->input_temp_sensor_, NAN);
-    this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
-    this->publish_sensor_state_(this->output_power_sensor_, NAN);
     this->publish_sensor_state_(this->output_current_sensor_, NAN);
     this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
     this->publish_sensor_state_(this->output_temp_sensor_, NAN);
-    this->publish_sensor_state_(this->efficiency_sensor_, NAN);
     this->publish_number_state_(this->max_output_current_number_, NAN);
-
-    this->sendSync();
-    this->gimme5();
   }
+
+  // Sync messages
+  std::vector<uint8_t> data2 = {};
+  this->canbus->send_data(CAN_ID_SYNC, true, data2);
+  this->canbus->send_data(CAN_ID_SET_CTL, true, data2);
 }
+
 
 // Function to convert float to byte array
 void float_to_bytearray(float value, uint8_t *bytes) {
