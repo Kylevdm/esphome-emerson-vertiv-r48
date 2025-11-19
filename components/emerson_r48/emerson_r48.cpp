@@ -397,15 +397,13 @@ void EmersonR48Component::set_control(uint8_t msgv) {
 
 void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data) {
   // ... existing logging ...
-
+  this->lastUpdate_ = millis();  // <-- MOVE THIS TO TOP!
   if (can_id == CAN_ID_DATA) {
     uint32_t value = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
     float conv_value = 0;
     memcpy(&conv_value, &value, sizeof(conv_value));
     
-    // UPDATE: Refresh last update time for ANY valid data
-    this->lastUpdate_ = millis();  // <-- MOVE THIS TO TOP!
-    
+    // UPDATE: Refresh last update time for ANY valid data    
     switch (data[3]) {
       case EMR48_DATA_OUTPUT_V:
         this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
