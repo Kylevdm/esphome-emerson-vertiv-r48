@@ -27,6 +27,5 @@ void EmersonR48Number::control(float value) {
   }
 }
 
-
 }  // namespace emerson_r48
 }  // namespace esphome
