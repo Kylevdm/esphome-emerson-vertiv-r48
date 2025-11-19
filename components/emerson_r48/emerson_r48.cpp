@@ -254,6 +254,12 @@ void EmersonR48Component::set_max_output_current(float value, bool offline) {
     }
 }
 
+//# AC input current limit (called Diesel power limit): gives the possibility to reduce the overall power of the rectifier
+//def limit_input(channel, current):
+//    b = float_to_bytearray(current)
+//    data = [0x03, 0xF0, 0x00, 0x1A, *b]
+//    send_can_message(channel, data)
+
 void EmersonR48Component::set_max_input_current(float value) {
 
     uint8_t byte_array[4];
@@ -277,6 +283,68 @@ void EmersonR48Component::set_max_input_current(float value) {
 
 }
 
+//# Time to ramp up the rectifiers output voltage to the set voltage value, and enable/disable
+//def walk_in(channel, time=0, enable=False):
+//    if not enable:
+//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00]
+//    else:
+//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x01, 0x00, 0x00]
+//        b = float_to_bytearray(time)
+//        data.extend(b)
+//    send_can_message(channel, data)
+
+void EmersonR48Component::set_walk_in(bool enable, float time) {
+    std::vector<uint8_t> data;
+    
+    if (!enable) {
+        data = { 0x03, 0xF0, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00 };
+    } else {
+        uint8_t byte_array[4];
+        float_to_bytearray(time, byte_array);
+        data = { 0x03, 0xF0, 0x00, 0x32, 0x00, 0x01, 0x00, 0x00 };
+        // Extend with time bytes
+        data.insert(data.end(), {byte_array[0], byte_array[1], byte_array[2], byte_array[3]});
+    }
+    
+    this->canbus->send_data(CAN_ID_SET, true, data);
+
+    size_t length = data.size();
+    char buffer[3 * length + 1];
+    size_t pos = 0;
+    for (size_t i = 0; i < length; ++i) {
+        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
+    }
+    ESP_LOGD(TAG, "walk_in: sent can_message.data: %s", buffer);
+}
+
+//# Restart after overvoltage enable/disable
+//def restart_overvoltage(channel, state=False):
+//    if not state:
+//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x00, 0x00, 0x00]
+//    else:
+//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x01, 0x00, 0x00]
+//    send_can_message(channel, data)
+
+void EmersonR48Component::set_restart_overvoltage(bool enable) {
+    std::vector<uint8_t> data;
+    
+    if (!enable) {
+        data = { 0x03, 0xF0, 0x00, 0x39, 0x00, 0x00, 0x00, 0x00 };
+    } else {
+        data = { 0x03, 0xF0, 0x00, 0x39, 0x00, 0x01, 0x00, 0x00 };
+    }
+    
+    this->canbus->send_data(CAN_ID_SET, true, data);
+
+    size_t length = data.size();
+    char buffer[3 * length + 1];
+    size_t pos = 0;
+    for (size_t i = 0; i < length; ++i) {
+        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
+    }
+    ESP_LOGD(TAG, "restart_overvoltage: sent can_message.data: %s", buffer);
+}
+
 /*
 void EmersonR48Component::set_max_output_current2(float value, bool offline) {
   uint8_t functionCode = 0x3;
@@ -288,13 +356,6 @@ void EmersonR48Component::set_max_output_current2(float value, bool offline) {
   //this->canbus->send_data(CAN_ID_SET, true, data);
 }
 */
-
-//# AC input current limit (called Diesel power limit): gives the possibility to reduce the overall power of the rectifier
-//def limit_input(channel, current):
-//    b = float_to_bytearray(current)
-//    data = [0x03, 0xF0, 0x00, 0x1A, *b]
-//    send_can_message(channel, data)
-
 
 void EmersonR48Component::set_offline_values() {
   if (output_voltage_number_) {
@@ -408,30 +469,3 @@ void EmersonR48Component::publish_number_state_(number::Number *number, float va
 
 }  // namespace huawei_r4850
 }  // namespace esphome
-
-
-// # Restart after overvoltage enable/disable
-// https://github.com/PurpleAlien/R48_Rectifier/blob/b97ed6ea1a1c34a899dc5b5cf66145445aef7363/rectifier.py#L158C1-L164C36
-// def restart_overvoltage(channel, state=False):
-//    if not state:
-//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x00, 0x00, 0x00]
-//    else:
-//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x01, 0x00, 0x00]
-//    send_can_message(channel, data)
-
-
-//# Time to ramp up the rectifiers output voltage to the set voltage value, and enable/disable
-//def walk_in(channel, time=0, enable=False):
-//    if not enable:
-//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00]
-//    else:
-//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x01, 0x00, 0x00]
-//        b = float_to_bytearray(time)
-//        data.extend(b)
-//    send_can_message(channel, data)
-
-//# AC input current limit (called Diesel power limit): gives the possibility to reduce the overall power of the rectifier
-//def limit_input(channel, current):
-//    b = float_to_bytearray(current)
-//    data = [0x03, 0xF0, 0x00, 0x1A, *b]
-//    send_can_message(channel, data)
