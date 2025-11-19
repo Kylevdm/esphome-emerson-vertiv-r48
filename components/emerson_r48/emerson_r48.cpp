@@ -368,7 +368,7 @@ void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_
 
       case EMR48_DATA_OUTPUT_AL:
         conv_value = conv_value * 100.0;
-        //this->publish_number_state_(this->max_output_current_number_, conv_value);
+        this->publish_number_state_(this->max_output_current_number_, conv_value);
         this->publish_sensor_state_(this->max_output_current_sensor_, conv_value);
         ESP_LOGV(TAG, "Output current limit: %f", conv_value);
         break;
