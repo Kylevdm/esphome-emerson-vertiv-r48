@@ -21,8 +21,8 @@ static const float EMR48_OUTPUT_CURRENT_MIN = 5.5; // 10%, rounded up to nearest
 static const float EMR48_OUTPUT_CURRENT_MAX = EMR48_OUTPUT_CURRENT_RATED_VALUE;
 
 static const uint32_t CAN_ID_REQUEST = 0x06000783;
-static const uint32_t CAN_ID_DATA = 0x060f8003; // Fixed: was 0x60f8003, added leading zero
-static const uint32_t CAN_ID_DATA2 = 0x060f8007; // Fixed: was 0x60f8007, added leading zero
+static const uint32_t CAN_ID_DATA = 0x60f8003;
+static const uint32_t CAN_ID_DATA2 = 0x60f8007;
 static const uint32_t CAN_ID_SET = 0x0607FF83; // set voltage and max current
 static const uint32_t CAN_ID_SET2 = 0x0677FF83; // set voltage and max current
 static const uint32_t CAN_ID_SET_CTL = 0x06080783; // set control
