@@ -103,7 +103,7 @@ void EmersonR48Component::update() {
   ESP_LOGD(TAG, "sent control can_message.data: %s", format_hex_pretty(data).c_str());
 
   // Publish NaN if no updates received
-  if (millis() - lastUpdate_ > this->update_interval_ * 10 && cnt == 0) {
+  if (millis() - lastUpdate_ > this->update_interval_ * 10) {
     this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
     this->publish_sensor_state_(this->output_current_sensor_, NAN);
     this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
