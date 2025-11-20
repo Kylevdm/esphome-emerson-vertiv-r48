@@ -1,124 +1,96 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/components/sensor/sensor.h"
-#include "esphome/components/number/number.h"
-#include "esphome/components/switch/switch.h"
 #include "esphome/components/canbus/canbus.h"
+#include "esphome/components/sensor/sensor.h"
+#include "esphome/components/switch/switch.h"
 
 namespace esphome {
 namespace emerson_r48 {
 
-class EmersonR48Component : public PollingComponent {
+// CAN IDs
+static const uint32_t CAN_ID_CONTROL = 0x108040FE;
+static const uint32_t CAN_ID_DATA = 0x1081407F;
+static const uint32_t CAN_ID_DATA2 = 0x1081D27F;
+
+// R48 Parameters for requests
+static const uint8_t PARAM_INPUT_VOLTAGE = 0x00;
+static const uint8_t PARAM_INPUT_CURRENT = 0x01;
+static const uint8_t PARAM_OUTPUT_VOLTAGE = 0x02;
+static const uint8_t PARAM_OUTPUT_CURRENT = 0x03;
+static const uint8_t PARAM_OUTPUT_TEMP = 0x04;
+
+// Power limit constant
+static const float MAX_POWER_WATTS = 3000.0f;
+static const float RATED_CURRENT_AMPS = 62.5f;
+
+class EmersonR48Component : public Component {
  public:
-  EmersonR48Component(canbus::Canbus *canbus);
   void setup() override;
-  void update() override;
+  void loop() override;
+  void dump_config() override;
+  float get_setup_priority() const override { return setup_priority::DATA; }
 
-  void set_output_voltage(float value, bool offline = false);
-  void set_max_output_current(float value, bool offline = false);
-  void set_max_input_current(float value);
-  void set_offline_values();
+  // Configuration
+  void set_canbus(canbus::Canbus *canbus) { canbus_ = canbus; }
+  void set_update_interval(uint32_t interval) { update_interval_ = interval; }
+  void set_offline_voltage(float voltage) { offline_voltage_ = voltage; }
+  void set_offline_current_percent(float percent) { offline_current_percent_ = percent; }
 
-  void set_input_voltage_sensor(sensor::Sensor *input_voltage_sensor) { input_voltage_sensor_ = input_voltage_sensor; }
-  void set_input_frequency_sensor(sensor::Sensor *input_frequency_sensor) {
-    input_frequency_sensor_ = input_frequency_sensor;
-  }
-  void set_input_current_sensor(sensor::Sensor *input_current_sensor) { input_current_sensor_ = input_current_sensor; }
-  void set_input_power_sensor(sensor::Sensor *input_power_sensor) { input_power_sensor_ = input_power_sensor; }
-  void set_input_temp_sensor(sensor::Sensor *input_temp_sensor) { input_temp_sensor_ = input_temp_sensor; }
-  void set_efficiency_sensor(sensor::Sensor *efficiency_sensor) { efficiency_sensor_ = efficiency_sensor; }
-  void set_output_voltage_sensor(sensor::Sensor *output_voltage_sensor) {
-    output_voltage_sensor_ = output_voltage_sensor;
-  }
-  void set_output_current_sensor(sensor::Sensor *output_current_sensor) {
-    output_current_sensor_ = output_current_sensor;
-  }
-  void set_max_output_current_sensor(sensor::Sensor *max_output_current_sensor) {
-     max_output_current_sensor_ = max_output_current_sensor;
-  }
+  // Sensors
+  void set_output_voltage_sensor(sensor::Sensor *sensor) { output_voltage_sensor_ = sensor; }
+  void set_output_current_sensor(sensor::Sensor *sensor) { output_current_sensor_ = sensor; }
+  void set_max_output_current_sensor(sensor::Sensor *sensor) { max_output_current_sensor_ = sensor; }
+  void set_output_temp_sensor(sensor::Sensor *sensor) { output_temp_sensor_ = sensor; }
+  void set_input_voltage_sensor(sensor::Sensor *sensor) { input_voltage_sensor_ = sensor; }
+  void set_output_power_sensor(sensor::Sensor *sensor) { output_power_sensor_ = sensor; }
+  void set_max_current_amperes_sensor(sensor::Sensor *sensor) { max_current_amperes_sensor_ = sensor; }
+  void set_power_headroom_sensor(sensor::Sensor *sensor) { power_headroom_sensor_ = sensor; }
 
-  void set_output_power_sensor(sensor::Sensor *output_power_sensor) { output_power_sensor_ = output_power_sensor; }
-  void set_output_temp_sensor(sensor::Sensor *output_temp_sensor) { output_temp_sensor_ = output_temp_sensor; }
-
-  void set_output_voltage_number(number::Number *output_voltage_number) {
-    output_voltage_number_ = output_voltage_number;
-  }
-  void set_max_output_current_number(number::Number *max_output_current_number) {
-    max_output_current_number_ = max_output_current_number;
-  }
-  void set_max_input_current_number(number::Number *max_input_current_number) {
-    max_input_current_number_ = max_input_current_number;
-  }
-
-  void set_control(uint8_t msgv);
-
-  void sendSync();
-  void sendSync2();
-  void gimme5();
-
-  uint32_t lastCtlSent_;
-
-  bool dcOff_ = 0;
-  bool fanFull_ = 0;
-  bool flashLed_ = 0;
-  bool acOff_ = 0;
+  // Control methods
+  void set_output_voltage(float voltage);
+  void set_max_output_current(float current_percent);
+  void set_power_on(bool on);
+  void set_restart_overvoltage(bool enable);
 
  protected:
-  canbus::Canbus *canbus;
-  uint32_t lastUpdate_;
-
-  sensor::Sensor *input_voltage_sensor_{nullptr};
-  sensor::Sensor *input_frequency_sensor_{nullptr};
-  sensor::Sensor *input_current_sensor_{nullptr};
-  sensor::Sensor *input_power_sensor_{nullptr};
-  sensor::Sensor *input_temp_sensor_{nullptr};
-  sensor::Sensor *efficiency_sensor_{nullptr};
+  canbus::Canbus *canbus_{nullptr};
+  
+  // Sensors
   sensor::Sensor *output_voltage_sensor_{nullptr};
   sensor::Sensor *output_current_sensor_{nullptr};
   sensor::Sensor *max_output_current_sensor_{nullptr};
-  sensor::Sensor *output_power_sensor_{nullptr};
   sensor::Sensor *output_temp_sensor_{nullptr};
+  sensor::Sensor *input_voltage_sensor_{nullptr};
+  sensor::Sensor *output_power_sensor_{nullptr};
+  sensor::Sensor *max_current_amperes_sensor_{nullptr};
+  sensor::Sensor *power_headroom_sensor_{nullptr};
 
-  number::Number *output_voltage_number_{nullptr};
-  number::Number *max_output_current_number_{nullptr};
-  number::Number *max_input_current_number_{nullptr};
+  // Configuration
+  uint32_t update_interval_{5000};
+  float offline_voltage_{53.1f};
+  float offline_current_percent_{50.0f};
 
-  void on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data);
-
-  void publish_sensor_state_(sensor::Sensor *sensor, float value);
-  void publish_number_state_(number::Number *number, float value);
+  // State tracking
+  float target_voltage_{53.5f};
+  float target_current_percent_{50.0f};
+  float current_voltage_{0.0f};
+  float current_current_{0.0f};
+  bool power_on_{true};
+  
+  uint32_t last_update_{0};
+  uint32_t last_control_message_{0};
+  uint32_t last_receive_time_{0};
+  
+  // Internal methods
+  void send_control_message_();
+  void send_read_all_request_();
+  void process_can_message_(uint32_t can_id, const std::vector<uint8_t> &data);
+  void check_timeout_();
+  void set_safe_defaults_();
+  float calculate_max_safe_current_(float voltage);
+  void update_computed_sensors_();
 };
 
 }  // namespace emerson_r48
 }  // namespace esphome
-
-/*
-
-# CAN stuff
-ARBITRATION_ID = 0x0607FF83 # or 06080783 ?
-ARBITRATION_ID_READ = 0x06000783
-BITRATE = 125000
-
-# individual properties to read out, data: 0x01, 0xF0, 0x00, p, 0x00, 0x00, 0x00, 0x00 with p:
-# 01 : output voltage
-# 02 : output current
-# 03 : output current limit
-# 04 : temperature in C
-# 05 : supply voltage
-READ_COMMANDS = [0x01, 0x02, 0x03, 0x04, 0x05]
-
-# Reads all of the above and a few more at once
-READ_ALL = [0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00] 
-
-# 62.5A is the nominal current of Emerson/Vertiv R48-3000e and corresponds to 121%
-OUTPUT_CURRENT_RATED_VALUE = 62.5
-OUTPUT_CURRENT_RATED_PERCENTAGE_MIN = 10
-OUTPUT_CURRENT_RATED_PERCENTAGE_MAX = 121
-OUTPUT_CURRENT_RATED_PERCENTAGE = 121
-OUTPUT_VOLTAGE_MIN = 41.0
-OUTPUT_VOLTAGE_MAX = 58.5
-OUTPUT_CURRENT_MIN = 5.5 # 10%, rounded up to nearest 0.5V 
-OUTPUT_CURRENT_MAX = OUTPUT_CURRENT_RATED_VALUE
-
-*/
