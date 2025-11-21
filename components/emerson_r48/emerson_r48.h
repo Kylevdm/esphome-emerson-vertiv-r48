@@ -28,12 +28,13 @@ static const float MAX_POWER_W = 3000.0f;
 static const float RATED_CURRENT_A = 62.5f;
 static const float MAX_CURRENT_PERCENT = 121.0f;
 
-class EmersonR48Component : public Component {
+class EmersonR48Component : public Component, public canbus::CANListener {
  public:
   void setup() override;
   void loop() override;
   void dump_config() override;
   float get_setup_priority() const override { return setup_priority::DATA; }
+  void on_can_message(uint32_t can_id, const std::vector<uint8_t> &data, bool rtr) override;
 
   // Configuration
   void set_canbus(canbus::Canbus *canbus) { this->canbus_ = canbus; }
