@@ -1,9 +1,9 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import number
-from esphome.const import CONF_ID, UNIT_VOLT, UNIT_PERCENT
+from esphome.const import CONF_ID
 
-from .. import emerson_r48_ns, EmersonR48Component
+from .. import emerson_r48_ns, EmersonR48Component, CONF_EMERSON_R48_ID
 
 DEPENDENCIES = ['emerson_r48']
 
@@ -13,17 +13,19 @@ CONF_OUTPUT_VOLTAGE = 'output_voltage'
 CONF_MAX_OUTPUT_CURRENT = 'max_output_current'
 
 CONFIG_SCHEMA = cv.Schema({
-    cv.GenerateID(): cv.use_id(EmersonR48Component),
-    cv.Optional(CONF_OUTPUT_VOLTAGE): number.NUMBER_SCHEMA.extend({
-        cv.GenerateID(): cv.declare_id(EmersonR48Number),
-    }).extend(cv.COMPONENT_SCHEMA),
-    cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.NUMBER_SCHEMA.extend({
-        cv.GenerateID(): cv.declare_id(EmersonR48Number),
-    }).extend(cv.COMPONENT_SCHEMA),
+    cv.GenerateID(CONF_EMERSON_R48_ID): cv.use_id(EmersonR48Component),
+    cv.Optional(CONF_OUTPUT_VOLTAGE): number.number_schema(
+        EmersonR48Number,
+        icon="mdi:flash"
+    ).extend(cv.COMPONENT_SCHEMA),
+    cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.number_schema(
+        EmersonR48Number,
+        icon="mdi:current-dc"
+    ).extend(cv.COMPONENT_SCHEMA),
 })
 
 async def to_code(config):
-    parent = await cg.get_variable(config[CONF_ID])
+    parent = await cg.get_variable(config[CONF_EMERSON_R48_ID])
     
     if CONF_OUTPUT_VOLTAGE in config:
         conf = config[CONF_OUTPUT_VOLTAGE]
