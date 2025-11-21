@@ -116,7 +116,7 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
-  if (can_id != CAN_ID_RESPONSE_1 && can_id != CAN_ID_RESPONSE_2 && can_id != CAN_ID_RESPONSE_3) {
+  if (can_id != CAN_ID_RESPONSE_1 && can_id != CAN_ID_RESPONSE_2) {
     return;
   }
   
