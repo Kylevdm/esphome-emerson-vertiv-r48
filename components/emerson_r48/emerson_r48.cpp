@@ -14,20 +14,28 @@ namespace emerson_r48 {
 static const char *const TAG = "emerson_r48";
 
 void EmersonR48Component::setup() {
-  // ... your setup logic ...
+  ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
+  
+  this->set_safe_defaults_();
+  this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
+  this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
+  this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
+  
   if (this->canbus_) {
-    // Register CAN frame trigger
     auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true);
-    trigger->set_component_source("canbus");
+    // REMOVE THIS LINE: trigger->set_component_source("canbus");
     App.register_component(trigger);
-    auto cb = [=](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
-      this->on_frame(can_id, remote_transmission_request, x);
+    
+    auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
+      this->on_frame_(can_id, x);  // Just pass can_id and data, ignore RTR flag
     };
+    
     auto *lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
     auto *automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(trigger);
     automation->add_actions({lambdaaction});
   }
 }
+
 
 void EmersonR48Component::loop() {
   uint32_t now = (esp_timer_get_time() / 1000ULL);
@@ -121,8 +129,7 @@ void EmersonR48Component::send_control_message_() {
            this->target_power_on_ ? "ON" : "OFF");
 }
 
-void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> &data) {
-  // Update last response time
+void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> &data) { // Update last response time
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
