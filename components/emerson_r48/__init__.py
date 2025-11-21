@@ -9,15 +9,17 @@ from esphome.const import (
 DEPENDENCIES = ["canbus"]
 AUTO_LOAD = ["sensor", "number", "switch", "button"]
 
+# Configuration constants
 CONF_CANBUS_ID = "canbus_id"
-CONF_EMERSON_R48_ID = "emerson_r48_id"  # ADD THIS LINE
+CONF_EMERSON_R48_ID = "emerson_r48_id"
 CONF_OFFLINE_VOLTAGE = "offline_voltage"
 CONF_OFFLINE_CURRENT_PERCENT = "offline_current_percent"
 
+# Namespace and class definitions
 emerson_r48_ns = cg.esphome_ns.namespace("emerson_r48")
 EmersonR48Component = emerson_r48_ns.class_("EmersonR48Component", cg.Component)
 
-# Also add backward compatibility alias
+# Backward compatibility alias
 EmersonR48 = EmersonR48Component
 
 CONFIG_SCHEMA = cv.Schema(
