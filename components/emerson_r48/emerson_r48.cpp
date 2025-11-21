@@ -19,16 +19,25 @@ void EmersonR48Component::setup() {
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
 
   if (this->canbus_) {
-    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true); // "true" for match extended
-    App.register_component(trigger);
-    auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
-      this->on_frame_(can_id, x);
+    // Register callback for each expected CAN ID
+    auto register_can_listener = [this](uint32_t can_id) {
+      auto *trigger = new canbus::CanbusTrigger(this->canbus_, can_id, 0xFFFFFFFF, true);
+      App.register_component(trigger);
+      auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
+        this->on_frame_(can_id, x);
+      };
+      auto *lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
+      auto *automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(trigger);
+      automation->add_actions({lambdaaction});
     };
-    auto *lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
-    auto *automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(trigger);
-    automation->add_actions({lambdaaction});
+    
+    // Register for all three response IDs
+    register_can_listener(CAN_ID_RESPONSE_1);  // 0x060F8007
+    register_can_listener(CAN_ID_RESPONSE_2);  // 0x060F8003
+    register_can_listener(CAN_ID_BROADCAST);   // 0x0707F803
   }
 }
+
 
 
 void EmersonR48Component::loop() {
