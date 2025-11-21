@@ -1,5 +1,6 @@
 #include "emerson_r48.h"
 #include "esphome/core/log.h"
+#include "esp_timer.h"
 
 namespace esphome {
 namespace emerson_r48 {
@@ -13,13 +14,13 @@ void EmersonR48Component::setup() {
   this->set_safe_defaults_();
   
   // Initialize timing
-  this->last_request_time_ = millis();
-  this->last_control_time_ = millis();
-  this->last_response_time_ = millis();
+  this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
+  this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
+  this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
 }
 
 void EmersonR48Component::loop() {
-  uint32_t now = millis();
+  uint32_t now = (esp_timer_get_time() / 1000ULL);
   
   // Send control message every 10 seconds
   if (now - this->last_control_time_ >= CONTROL_INTERVAL) {
@@ -120,7 +121,7 @@ void EmersonR48Component::send_control_message_() {
 
 void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> &data) {
   // Update last response time
-  this->last_response_time_ = millis();
+  this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
   if (can_id != CAN_ID_DATA && can_id != CAN_ID_DATA2) {
