@@ -18,17 +18,8 @@ void EmersonR48Component::setup() {
   this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
-  
-  // Register CAN frame trigger - this connects incoming frames to on_frame_()
-  if (this->canbus_ != nullptr) {
-    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true);
-    trigger->add_actions({new LambdaAction<uint32_t, std::vector<uint8_t>>(
-        [this](uint32_t can_id, const std::vector<uint8_t> &data) {
-          this->on_frame_(can_id, data);
-        })});
-    this->canbus_->add_trigger(trigger);
-  }
 }
+
 
 
 
