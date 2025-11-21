@@ -1,6 +1,7 @@
 #include "emerson_r48.h"
 #include "esphome/core/log.h"
 #include "esp_timer.h"
+#include "esphome/components/canbus/canbus.h"
 
 namespace esphome {
 namespace emerson_r48 {
