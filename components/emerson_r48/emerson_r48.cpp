@@ -2,6 +2,11 @@
 #include "esphome/core/log.h"
 #include "esp_timer.h"
 #include "esphome/components/canbus/canbus.h"
+#include "esphome/core/application.h"
+#include "esphome/core/base_automation.h"
+#include "esphome/core/automation.h"
+#include "esphome/core/component.h"
+#include "esphome/components/canbus/canbus.h"
 
 namespace esphome {
 namespace emerson_r48 {
@@ -9,19 +14,20 @@ namespace emerson_r48 {
 static const char *const TAG = "emerson_r48";
 
 void EmersonR48Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
-  
-  // Set safe offline defaults on boot
-  this->set_safe_defaults_();
-  
-  // Initialize timing
-  this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
-  this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
-  this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
+  // ... your setup logic ...
+  if (this->canbus_) {
+    // Register CAN frame trigger
+    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true);
+    trigger->set_component_source("canbus");
+    App.register_component(trigger);
+    auto cb = [=](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
+      this->on_frame(can_id, remote_transmission_request, x);
+    };
+    auto *lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
+    auto *automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(trigger);
+    automation->add_actions({lambdaaction});
+  }
 }
-
-
-
 
 void EmersonR48Component::loop() {
   uint32_t now = (esp_timer_get_time() / 1000ULL);
