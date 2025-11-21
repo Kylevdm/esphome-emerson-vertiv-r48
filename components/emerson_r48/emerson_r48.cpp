@@ -1,11 +1,9 @@
 #include "emerson_r48.h"
 #include "esphome/core/log.h"
 #include "esp_timer.h"
-#include "esphome/components/canbus/canbus.h"
 #include "esphome/core/application.h"
 #include "esphome/core/base_automation.h"
 #include "esphome/core/automation.h"
-#include "esphome/core/component.h"
 #include "esphome/components/canbus/canbus.h"
 
 namespace esphome {
@@ -15,14 +13,13 @@ static const char *const TAG = "emerson_r48";
 
 void EmersonR48Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
-  
   this->set_safe_defaults_();
   this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
-  
+
   if (this->canbus_) {
-    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true); // "true" means match extended frames too
+    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true); // "true" for match extended
     App.register_component(trigger);
     auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
       this->on_frame_(can_id, x);
@@ -126,7 +123,8 @@ void EmersonR48Component::send_control_message_() {
            this->target_power_on_ ? "ON" : "OFF");
 }
 
-void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> &data) { // Update last response time
+void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> &data) {
+  ESP_LOGD(TAG, "on_frame_ called with CAN ID: 0x%08X", can_id);
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
