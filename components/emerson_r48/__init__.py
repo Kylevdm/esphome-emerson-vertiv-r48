@@ -25,7 +25,7 @@ EmersonR48 = EmersonR48Component
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(EmersonR48Component),
-        cv.Required(CONF_CANBUS_ID): cv.use_id(canbus.Canbus),
+        cv.Required(CONF_CANBUS_ID): cv.use_id(canbus.CanbusComponent),
         cv.Optional(CONF_UPDATE_INTERVAL, default="5s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_OFFLINE_VOLTAGE, default=53.1): cv.float_range(min=41.0, max=58.5),
         cv.Optional(CONF_OFFLINE_CURRENT_PERCENT, default=50.0): cv.float_range(min=10.0, max=121.0),
