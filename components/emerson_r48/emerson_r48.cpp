@@ -10,14 +10,19 @@ static const char *const TAG = "emerson_r48";
 void EmersonR48Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
   
-  // Set safe offline defaults on boot
   this->set_safe_defaults_();
-  
-  // Initialize timing
   this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
+
+  // <-- Add this!
+  if (this->canbus_ != nullptr) {
+    this->canbus_->add_on_frame_callback([this](uint32_t can_id, const std::vector<uint8_t>& data) {
+      this->on_frame_(can_id, data);
+    });
+  }
 }
+
 
 void EmersonR48Component::loop() {
   uint32_t now = (esp_timer_get_time() / 1000ULL);
