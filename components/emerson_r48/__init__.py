@@ -10,15 +10,19 @@ DEPENDENCIES = ["canbus"]
 AUTO_LOAD = ["sensor", "number", "switch", "button"]
 
 CONF_CANBUS_ID = "canbus_id"
+CONF_EMERSON_R48_ID = "emerson_r48_id"  # ADD THIS LINE
 CONF_OFFLINE_VOLTAGE = "offline_voltage"
 CONF_OFFLINE_CURRENT_PERCENT = "offline_current_percent"
 
 emerson_r48_ns = cg.esphome_ns.namespace("emerson_r48")
-EmersonR48 = emerson_r48_ns.class_("EmersonR48", cg.Component)
+EmersonR48Component = emerson_r48_ns.class_("EmersonR48Component", cg.Component)
+
+# Also add backward compatibility alias
+EmersonR48 = EmersonR48Component
 
 CONFIG_SCHEMA = cv.Schema(
     {
-        cv.GenerateID(): cv.declare_id(EmersonR48),
+        cv.GenerateID(): cv.declare_id(EmersonR48Component),
         cv.Required(CONF_CANBUS_ID): cv.use_id(canbus.Canbus),
         cv.Optional(CONF_UPDATE_INTERVAL, default="5s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_OFFLINE_VOLTAGE, default=53.1): cv.float_range(min=41.0, max=58.5),
