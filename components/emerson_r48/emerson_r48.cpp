@@ -128,7 +128,9 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
-  if (can_id != CAN_ID_RESPONSE_1 && can_id != CAN_ID_RESPONSE_2) {
+  if (can_id != CAN_ID_RESPONSE_1 && 
+      can_id != CAN_ID_RESPONSE_2 && 
+      can_id != CAN_ID_BROADCAST) {
     return;
   }
   
@@ -137,10 +139,11 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
     return;
   }
   
-  ESP_LOGD(TAG, "Received CAN frame ID: 0x%08X", can_id);
+  ESP_LOGD(TAG, "Received CAN frame ID: 0x%08X, Data: %02X %02X %02X %02X %02X %02X %02X %02X", 
+           can_id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
   
-  // Parse based on CAN ID
-  if (can_id == CAN_ID_RESPONSE_1) {
+  // Parse based on CAN ID - treat broadcast same as RESPONSE_1
+  if (can_id == CAN_ID_RESPONSE_1 || can_id == CAN_ID_BROADCAST) {
     // Primary data frame
     // Bytes 0-1: Output voltage (V * 1024 / 100)
     uint16_t voltage_raw = data[0] | (data[1] << 8);
