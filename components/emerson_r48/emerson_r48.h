@@ -14,8 +14,6 @@ static const uint32_t CAN_ID_READ = 0x06000783;     // For sending read requests
 // Response/Data IDs (what the device sends back)
 static const uint32_t CAN_ID_RESPONSE_1 = 0x060F8003;  // Primary data
 static const uint32_t CAN_ID_RESPONSE_2 = 0x060F8007;  // Secondary data
-static const uint32_t CAN_ID_RESPONSE_3 = 0x060F8007;  // Tertiary response
-
 
 // Request types
 static const uint8_t REQUEST_READ_ALL = 0x80;
