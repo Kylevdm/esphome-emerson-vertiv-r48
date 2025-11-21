@@ -119,7 +119,7 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
   
   // Check if this is a data frame we care about
-  if (can_id != CAN_ID_DATA && can_id != CAN_ID_DATA2) {
+  if (can_id != CAN_ID_RESPONSE_1 && can_id != CAN_ID_RESPONSE_2 && can_id != CAN_ID_RESPONSE_3) {
     return;
   }
   
@@ -131,7 +131,7 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
   ESP_LOGD(TAG, "Received CAN frame ID: 0x%08X", can_id);
   
   // Parse based on CAN ID
-  if (can_id == CAN_ID_DATA) {
+  if (can_id == CAN_ID_RESPONSE_1) {
     // Primary data frame
     // Bytes 0-1: Output voltage (V * 1024 / 100)
     uint16_t voltage_raw = data[0] | (data[1] << 8);
@@ -161,7 +161,7 @@ void EmersonR48Component::on_frame_(uint32_t can_id, const std::vector<uint8_t> 
              this->current_output_current_,
              this->current_max_output_current_percent_);
     
-  } else if (can_id == CAN_ID_DATA2) {
+  } else if (can_id == CAN_ID_RESPONSE_2) {
     // Secondary data frame
     // Bytes 0-1: Temperature (°C * 10)
     uint16_t temp_raw = data[0] | (data[1] << 8);
