@@ -7,10 +7,15 @@
 namespace esphome {
 namespace emerson_r48 {
 
-// CAN IDs
-static const uint32_t CAN_ID_CONTROL = 0x108040FE;
-static const uint32_t CAN_ID_DATA = 0x1081407F;
-static const uint32_t CAN_ID_DATA2 = 0x1081D27F;
+// CAN IDs (extended frames)
+static const uint32_t CAN_ID_CONTROL = 0x0607FF83;  // For sending control/set commands
+static const uint32_t CAN_ID_READ = 0x06000783;     // For sending read requests
+
+// Response/Data IDs (what the device sends back)
+static const uint32_t CAN_ID_RESPONSE_1 = 0x0707F803;  // Primary response
+static const uint32_t CAN_ID_RESPONSE_2 = 0x060F8003;  // Secondary response  
+static const uint32_t CAN_ID_RESPONSE_3 = 0x060F8007;  // Tertiary response
+
 
 // Request types
 static const uint8_t REQUEST_READ_ALL = 0x80;
