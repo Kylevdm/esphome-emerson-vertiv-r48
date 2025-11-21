@@ -4,26 +4,24 @@
 namespace esphome {
 namespace emerson_r48 {
 
-static const int8_t SET_VOLTAGE_FUNCTION = 0x0;
-static const int8_t SET_CURRENT_FUNCTION = 0x3;
-static const int8_t SET_INPUT_CURRENT_FUNCTION = 0x4;
+static const char *const TAG = "emerson_r48.number";
 
 void EmersonR48Number::control(float value) {
-  switch (this->functionCode_) {
-    case SET_VOLTAGE_FUNCTION:
-      parent_->set_output_voltage(value);
+  switch (this->type_) {
+    case 0:  // Voltage
+      ESP_LOGD(TAG, "Setting voltage to %.2f V", value);
+      this->parent_->set_output_voltage(value);
       this->publish_state(value);
       break;
-    case SET_CURRENT_FUNCTION:
-      parent_->set_max_output_current(value);
-      this->publish_state(value);
-      break;
-    case SET_INPUT_CURRENT_FUNCTION:
-      parent_->set_max_input_current(value);
+      
+    case 1:  // Current percent
+      ESP_LOGD(TAG, "Setting max current to %.0f %%", value);
+      this->parent_->set_max_output_current(value);
       this->publish_state(value);
       break;
 
     default:
+      ESP_LOGW(TAG, "Unknown number type: %d", this->type_);
       break;
   }
 }
