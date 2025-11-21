@@ -105,8 +105,6 @@ void EmersonR48Component::send_control_message_() {
     0x00                                              // Reserved
   };
   
-  this->canbus_->send_data(CAN_ID_CONTROL, false, data);
-  
   ESP_LOGD(TAG, "Sent control: V=%.2fV (0x%04X), I=%.0f%% (0x%04X), Power=%s", 
            this->target_output_voltage_, voltage_raw,
            this->target_max_output_current_percent_, current_raw,
