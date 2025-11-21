@@ -10,18 +10,25 @@ static const char *const TAG = "emerson_r48";
 void EmersonR48Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Emerson R48...");
   
+  // Set safe offline defaults on boot
   this->set_safe_defaults_();
+  
+  // Initialize timing
   this->last_request_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_control_time_ = (esp_timer_get_time() / 1000ULL);
   this->last_response_time_ = (esp_timer_get_time() / 1000ULL);
-
-  // <-- Add this!
+  
+  // Register CAN frame trigger - this connects incoming frames to on_frame_()
   if (this->canbus_ != nullptr) {
-    this->canbus_->add_on_frame_callback([this](uint32_t can_id, const std::vector<uint8_t>& data) {
-      this->on_frame_(can_id, data);
-    });
+    auto *trigger = new canbus::CanbusTrigger(this->canbus_, 0, 0, true);
+    trigger->add_actions({new LambdaAction<uint32_t, std::vector<uint8_t>>(
+        [this](uint32_t can_id, const std::vector<uint8_t> &data) {
+          this->on_frame_(can_id, data);
+        })});
+    this->canbus_->add_trigger(trigger);
   }
 }
+
 
 
 void EmersonR48Component::loop() {
