@@ -71,8 +71,7 @@ void EmersonR48Component::send_request_() {
   // Send "read all" request - single frame to get all sensor data
   std::vector<uint8_t> data = { 0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00 };
   this->canbus_->send_data(0x0607FF83, true, data);  // true = extended frame
-  
-  this->canbus_->send_data(CAN_ID_CONTROL, false, data);
+
   ESP_LOGD(TAG, "Sent read all request");
 }
 
