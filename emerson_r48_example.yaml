@@ -67,25 +67,29 @@ emerson_r48:
 sensor:
   - platform: emerson_r48
     output_voltage:
-      name: Output voltage
+      name: "Output voltage"
     output_current:
-      name: Output current
+      name: "Output current"
     output_temp:
-      name: Temperature
+      name: "Temperature"
     input_voltage:
-      name: AC Voltage
+      name: "AC Voltage"
     max_output_current:
-      name: DC max current
+      name: "DC Max Current"
+      unit_of_measurement: "%"
+      icon: "mdi:percent"
 
 
 number:
   - platform: emerson_r48
     output_voltage:
-      name: Set output voltage
+      name: "Set output voltage"
     max_output_current:
-      name: Max output current
+      name: "Set Max Current"
+      unit_of_measurement: "%"
+      icon: "mdi:percent"
     max_input_current:
-      name: Max input current
+      name: "Max input current"
 
 button:
   - platform: emerson_r48
