@@ -37,6 +37,15 @@ static const uint8_t EMR48_DATA_OUTPUT_T = 0x04;
 static const uint8_t EMR48_DATA_OUTPUT_IV = 0x05;
 
 
+void EmersonR48Component::log_can_data_(const char *prefix, const std::vector<uint8_t> &data) {
+  char buffer[25];  // max 8 bytes * 3 chars + null
+  size_t pos = 0;
+  for (size_t i = 0; i < data.size() && pos < sizeof(buffer) - 3; ++i) {
+    pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
+  }
+  ESP_LOGD(TAG, "%s: %s", prefix, buffer);
+}
+
 EmersonR48Component::EmersonR48Component(canbus::Canbus *canbus) { this->canbus = canbus; }
 
 void EmersonR48Component::sendSync(){
@@ -64,7 +73,7 @@ void EmersonR48Component::setup() {
   // canbus_canbustrigger->set_component_source("canbus");  // Commented for ESPHome 2025.x compatibility
   App.register_component(canbus_canbustrigger);
   automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(canbus_canbustrigger);
-auto cb = [=, this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
+  auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
     this->on_frame(can_id, remote_transmission_request, x);
 };
   lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
@@ -72,7 +81,22 @@ auto cb = [=, this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmi
 
   this->sendSync();
   this->gimme5();
+}
 
+void EmersonR48Component::dump_config() {
+  ESP_LOGCONFIG(TAG, "Emerson R48:");
+  ESP_LOGCONFIG(TAG, "  Update interval: %u ms", this->update_interval_);
+  LOG_SENSOR("  ", "Input Voltage", this->input_voltage_sensor_);
+  LOG_SENSOR("  ", "Input Frequency", this->input_frequency_sensor_);
+  LOG_SENSOR("  ", "Input Current", this->input_current_sensor_);
+  LOG_SENSOR("  ", "Input Power", this->input_power_sensor_);
+  LOG_SENSOR("  ", "Input Temp", this->input_temp_sensor_);
+  LOG_SENSOR("  ", "Efficiency", this->efficiency_sensor_);
+  LOG_SENSOR("  ", "Output Voltage", this->output_voltage_sensor_);
+  LOG_SENSOR("  ", "Output Current", this->output_current_sensor_);
+  LOG_SENSOR("  ", "Max Output Current", this->max_output_current_sensor_);
+  LOG_SENSOR("  ", "Output Power", this->output_power_sensor_);
+  LOG_SENSOR("  ", "Output Temp", this->output_temp_sensor_);
 }
 
 void EmersonR48Component::update() {
@@ -104,17 +128,11 @@ void EmersonR48Component::update() {
     std::vector<uint8_t> data = {0x01, 0xF0, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00};
     this->canbus->send_data(CAN_ID_REQUEST, true, data);
   }
-//  if (cnt == 6) {
-//    ESP_LOGD(TAG, "Requesting all 5 message");
-//    std::vector<uint8_t> data = {0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00};
-//    this->canbus->send_data(CAN_ID_REQUEST, true, data);
-//  }
 
-  if (cnt == 6) { 
+  if (cnt == 6) {
     cnt = 0; 
     // send control every 10 seconds
-    uint8_t msgv = this->dcOff_ << 7 | this->fanFull_ << 4 | this->flashLed_ << 3 | this->acOff_ << 2 | 1;
-    this->set_control(msgv);
+    this->set_control(this->get_control_byte());
 
     if (millis() - this->lastCtlSent_ > 10000) {
 
@@ -170,24 +188,13 @@ void float_to_bytearray(float value, uint8_t *bytes) {
 
 void EmersonR48Component::set_output_voltage(float value, bool offline) {
   int32_t raw = 0;
-  if (value > EMR48_OUTPUT_VOLTAGE_MIN && value < EMR48_OUTPUT_VOLTAGE_MAX) {
+  if (value >= EMR48_OUTPUT_VOLTAGE_MIN && value <= EMR48_OUTPUT_VOLTAGE_MAX) {
     memcpy(&raw, &value, sizeof(raw));
     uint8_t p = offline ? 0x24 : 0x21;
     std::vector<uint8_t> data = {
         0x03, 0xF0, 0x0, p, (uint8_t) (raw >> 24), (uint8_t) (raw >> 16), (uint8_t) (raw >> 8), (uint8_t) raw};
     this->canbus->send_data(CAN_ID_SET, true, data);
-
-    size_t length = data.size();
-    char buffer[3 * length + 1];
-
-    // Format the data into the buffer
-    size_t pos = 0;
-    for (size_t i = 0; i < length; ++i) {
-        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
-    }
-
-    // Log the entire line
-    ESP_LOGD(TAG, "sent can_message.data: %s", buffer);
+    log_can_data_("sent can_message.data", data);
 
   } else {
     ESP_LOGD(TAG, "set output voltage is out of range: %f", value);
@@ -235,19 +242,7 @@ void EmersonR48Component::set_max_output_current(float value, bool offline) {
         std::vector<uint8_t> data = { 0x03, 0xF0, 0x00, p, byte_array[0], byte_array[1], byte_array[2], byte_array[3] };
         
         this->canbus->send_data(CAN_ID_SET, true, data);
-        //this->canbus->send_data(CAN_ID_SET2, true, data);
-
-        size_t length = data.size();
-        char buffer[3 * length + 1];
-
-        // Format the data into the buffer
-        size_t pos = 0;
-        for (size_t i = 0; i < length; ++i) {
-            pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
-        }
-
-        // Log the entire line
-        ESP_LOGD(TAG, "max_output_current: sent can_message.data: %s", buffer);
+        log_can_data_("max_output_current: sent can_message.data", data);
 
     } else {
         ESP_LOGD(TAG, "Current should be between 10 and 121\n");
@@ -262,39 +257,8 @@ void EmersonR48Component::set_max_input_current(float value) {
     std::vector<uint8_t> data = { 0x03, 0xF0, 0x00, 0x1A, byte_array[0], byte_array[1], byte_array[2], byte_array[3] };
     
     this->canbus->send_data(CAN_ID_SET, true, data);
-
-    size_t length = data.size();
-    char buffer[3 * length + 1];
-
-    // Format the data into the buffer
-    size_t pos = 0;
-    for (size_t i = 0; i < length; ++i) {
-        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
-    }
-
-    // Log the entire line
-    ESP_LOGD(TAG, "max_input_current, sent can_message.data: %s", buffer);
-
+    log_can_data_("max_input_current: sent can_message.data", data);
 }
-
-/*
-void EmersonR48Component::set_max_output_current2(float value, bool offline) {
-  uint8_t functionCode = 0x3;
-  if (offline)
-    functionCode += 1;
-  int32_t raw = 20.0 * value;
-  std::vector<uint8_t> data = {
-      0x1, functionCode, 0x0, 0x0, (uint8_t) (raw >> 24), (uint8_t) (raw >> 16), (uint8_t) (raw >> 8), (uint8_t) raw};
-  //this->canbus->send_data(CAN_ID_SET, true, data);
-}
-*/
-
-//# AC input current limit (called Diesel power limit): gives the possibility to reduce the overall power of the rectifier
-//def limit_input(channel, current):
-//    b = float_to_bytearray(current)
-//    data = [0x03, 0xF0, 0x00, 0x1A, *b]
-//    send_can_message(channel, data)
-
 
 void EmersonR48Component::set_offline_values() {
   if (output_voltage_number_) {
@@ -305,49 +269,23 @@ void EmersonR48Component::set_offline_values() {
   }
 }
 
-// https://github.com/anikrooz/Emerson-Vertiv-R48/blob/main/standalone/chargerManager/chargerManager.ino
-//void sendControl(){
-   //control bits...
-//   uint8_t msg[8] = {0, 0xF0, 0, 0x80, 0, 0, 0, 0};
-//   msg[2] = dcOff << 7 | fanFull << 4 | flashLed <<3 | acOff << 2 | 1;
-   //txId = 0x06080783; // CAN_ID_SET_CTL
-   //sendcommand(txId, msg);
-//}
+uint8_t EmersonR48Component::get_control_byte() const {
+  return (dcOff_ << 7) | (fanFull_ << 4) | (flashLed_ << 3) | (acOff_ << 2) | 1;
+}
 
 void EmersonR48Component::set_control(uint8_t msgv) {
-  uint8_t msg[8] = {0, 0xF0, msgv, 0x80, 0, 0, 0, 0};
-
   std::vector<uint8_t> data = { 0x00, 0xF0, msgv, 0x80, 0, 0, 0, 0 };
-  
   this->canbus->send_data(CAN_ID_SET_CTL, true, data);
-
-  size_t length = data.size();
-  char buffer[3 * length + 1];
-
-  // Format the data into the buffer
-  size_t pos = 0;
-  for (size_t i = 0; i < length; ++i) {
-      pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
-  }
-
-  // Log the entire line
-  ESP_LOGD(TAG, "sent control can_message.data: %s", buffer);
+  log_can_data_("sent control can_message.data", data);
 }
 
 void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data) {
-  // Create a buffer to hold the formatted string
-  // Each byte is represented by two hex digits and a space, +1 for null terminator
-  size_t length = data.size();
-  char buffer[3 * length + 1];
+  log_can_data_("received can_message.data", data);
 
-  // Format the data into the buffer
-  size_t pos = 0;
-  for (size_t i = 0; i < length; ++i) {
-      pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02x ", data[i]);
+  if (data.size() < 8) {
+    ESP_LOGW(TAG, "Ignoring short CAN frame (%d bytes) from 0x%08X", data.size(), can_id);
+    return;
   }
-
-  // Log the entire line
-  ESP_LOGD(TAG, "received can_message.data: %s", buffer);
 
   if (can_id == CAN_ID_DATA) {
     uint32_t value = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
@@ -355,13 +293,11 @@ void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_
     memcpy(&conv_value, &value, sizeof(conv_value));
     switch (data[3]) {
       case EMR48_DATA_OUTPUT_V:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
         ESP_LOGV(TAG, "Output voltage: %f", conv_value);
         break;
 
       case EMR48_DATA_OUTPUT_A:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_current_sensor_, conv_value);
         ESP_LOGV(TAG, "Output current: %f", conv_value);
         break;
@@ -374,13 +310,11 @@ void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_
         break;
 
       case EMR48_DATA_OUTPUT_T:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
         ESP_LOGV(TAG, "Temperature: %f", conv_value);
         break;
 
       case EMR48_DATA_OUTPUT_IV:
-        //conv_value = value / 1.0;
         this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
         ESP_LOGV(TAG, "Input voltage: %f", conv_value);
 
@@ -388,7 +322,6 @@ void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_
         break;
 
       default:
-        // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
         break;
     }
   }
@@ -406,32 +339,5 @@ void EmersonR48Component::publish_number_state_(number::Number *number, float va
   }
 }
 
-}  // namespace huawei_r4850
+}  // namespace emerson_r48
 }  // namespace esphome
-
-
-// # Restart after overvoltage enable/disable
-// https://github.com/PurpleAlien/R48_Rectifier/blob/b97ed6ea1a1c34a899dc5b5cf66145445aef7363/rectifier.py#L158C1-L164C36
-// def restart_overvoltage(channel, state=False):
-//    if not state:
-//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x00, 0x00, 0x00]
-//    else:
-//        data = [0x03, 0xF0, 0x00, 0x39, 0x00, 0x01, 0x00, 0x00]
-//    send_can_message(channel, data)
-
-
-//# Time to ramp up the rectifiers output voltage to the set voltage value, and enable/disable
-//def walk_in(channel, time=0, enable=False):
-//    if not enable:
-//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00]
-//    else:
-//        data = [0x03, 0xF0, 0x00, 0x32, 0x00, 0x01, 0x00, 0x00]
-//        b = float_to_bytearray(time)
-//        data.extend(b)
-//    send_can_message(channel, data)
-
-//# AC input current limit (called Diesel power limit): gives the possibility to reduce the overall power of the rectifier
-//def limit_input(channel, current):
-//    b = float_to_bytearray(current)
-//    data = [0x03, 0xF0, 0x00, 0x1A, *b]
-//    send_can_message(channel, data)

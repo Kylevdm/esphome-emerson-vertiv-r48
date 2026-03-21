@@ -9,11 +9,16 @@
 namespace esphome {
 namespace emerson_r48 {
 
+class EmersonR48Switch;  // forward declaration
+
 class EmersonR48Component : public PollingComponent {
+  friend class EmersonR48Switch;
+
  public:
   EmersonR48Component(canbus::Canbus *canbus);
   void setup() override;
   void update() override;
+  void dump_config() override;
 
   void set_output_voltage(float value, bool offline = false);
   void set_max_output_current(float value, bool offline = false);
@@ -52,21 +57,21 @@ class EmersonR48Component : public PollingComponent {
   }
 
   void set_control(uint8_t msgv);
+  uint8_t get_control_byte() const;
 
   void sendSync();
   void sendSync2();
   void gimme5();
 
-  uint32_t lastCtlSent_;
-
-  bool dcOff_ = 0;
-  bool fanFull_ = 0;
-  bool flashLed_ = 0;
-  bool acOff_ = 0;
-
  protected:
   canbus::Canbus *canbus;
   uint32_t lastUpdate_;
+  uint32_t lastCtlSent_;
+
+  bool dcOff_ = false;
+  bool fanFull_ = false;
+  bool flashLed_ = false;
+  bool acOff_ = false;
 
   sensor::Sensor *input_voltage_sensor_{nullptr};
   sensor::Sensor *input_frequency_sensor_{nullptr};
@@ -86,39 +91,10 @@ class EmersonR48Component : public PollingComponent {
 
   void on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data);
 
+  static void log_can_data_(const char *prefix, const std::vector<uint8_t> &data);
   void publish_sensor_state_(sensor::Sensor *sensor, float value);
   void publish_number_state_(number::Number *number, float value);
 };
 
 }  // namespace emerson_r48
 }  // namespace esphome
-
-/*
-
-# CAN stuff
-ARBITRATION_ID = 0x0607FF83 # or 06080783 ?
-ARBITRATION_ID_READ = 0x06000783
-BITRATE = 125000
-
-# individual properties to read out, data: 0x01, 0xF0, 0x00, p, 0x00, 0x00, 0x00, 0x00 with p:
-# 01 : output voltage
-# 02 : output current
-# 03 : output current limit
-# 04 : temperature in C
-# 05 : supply voltage
-READ_COMMANDS = [0x01, 0x02, 0x03, 0x04, 0x05]
-
-# Reads all of the above and a few more at once
-READ_ALL = [0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00] 
-
-# 62.5A is the nominal current of Emerson/Vertiv R48-3000e and corresponds to 121%
-OUTPUT_CURRENT_RATED_VALUE = 62.5
-OUTPUT_CURRENT_RATED_PERCENTAGE_MIN = 10
-OUTPUT_CURRENT_RATED_PERCENTAGE_MAX = 121
-OUTPUT_CURRENT_RATED_PERCENTAGE = 121
-OUTPUT_VOLTAGE_MIN = 41.0
-OUTPUT_VOLTAGE_MAX = 58.5
-OUTPUT_CURRENT_MIN = 5.5 # 10%, rounded up to nearest 0.5V 
-OUTPUT_CURRENT_MAX = OUTPUT_CURRENT_RATED_VALUE
-
-*/

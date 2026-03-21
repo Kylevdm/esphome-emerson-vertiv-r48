@@ -16,5 +16,5 @@ class EmersonR48Button : public button::Button, public Component {
   void press_action() override;
 };
 
-}  // namespace emesron_r48
+}  // namespace emerson_r48
 }  // namespace esphome
