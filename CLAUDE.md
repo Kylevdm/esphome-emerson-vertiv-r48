@@ -68,7 +68,7 @@ The `functionCode` passed to `set_parent()` is the dispatch key inside the C++ `
 
 ### `components/mcp2515/`
 
-A vendored copy of ESPHome's stock MCP2515 CAN driver, bundled so users get a compatible version (notably the `add_callback` hook the hub relies on) without depending on a specific ESPHome release. Treat it as a third-party dependency: don't refactor it for style, only touch it for genuine compatibility fixes.
+A vendored copy of ESPHome's stock MCP2515 CAN driver. The `add_callback` hook the hub relies on lives on ESPHome's **core `canbus::Canbus` base class**, not on the MCP2515 driver, so this copy is functionally identical to the stock `mcp2515` component and provides no capability the hub actually needs — it is a candidate for removal in favour of the stock component. While it remains, treat it as a third-party dependency: don't refactor it for style, only touch it for genuine compatibility fixes.
 
 ## Conventions and gotchas
 
