@@ -1,0 +1,77 @@
+# Self-contained config used by CI to validate this external component with
+# `esphome config`. It loads the component from the local working tree (no
+# GitHub fetch) and uses inline values (no secrets file) so it runs without
+# any external setup. Exercises the hub plus every platform (sensor, number,
+# switch, button) so schema/codegen regressions surface on every PR.
+esphome:
+  name: emerson-r48-ci
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+logger:
+
+spi:
+  - id: McpSpi
+    clk_pin: GPIO18
+    mosi_pin: GPIO23
+    miso_pin: GPIO19
+
+canbus:
+  - platform: mcp2515
+    id: can
+    spi_id: McpSpi
+    use_extended_id: true
+    cs_pin: GPIO5
+    can_id: 0x0607FF83
+    bit_rate: 125kbps
+    mode: NORMAL
+
+emerson_r48:
+  canbus_id: can
+  update_interval: 1s
+
+sensor:
+  - platform: emerson_r48
+    output_voltage:
+      name: Output voltage
+    output_current:
+      name: Output current
+    output_temp:
+      name: Temperature
+    input_voltage:
+      name: AC Voltage
+    max_output_current:
+      name: DC Max Current
+
+number:
+  - platform: emerson_r48
+    output_voltage:
+      name: Set output voltage
+    max_output_current:
+      name: Set Max Current
+    max_input_current:
+      name: Max input current
+
+button:
+  - platform: emerson_r48
+    set_offline_values:
+      name: Set offline values
+
+switch:
+  - platform: emerson_r48
+    ac_sw:
+      name: AC switch Turn OFF
+    dc_sw:
+      name: DC switch Turn OFF
+    fan_sw:
+      name: FAN switch MAX
+    led_sw:
+      name: LED switch
