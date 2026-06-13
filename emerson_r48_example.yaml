@@ -3,8 +3,8 @@ esphome:
   friendly_name: Emerson_Vertiv_R48
 
 external_components:
-  - source: github://leodesigner/esphome-emerson-vertiv-r48
-#    refresh: 0s
+  - source: github://Kylevdm/esphome-emerson-vertiv-r48
+    refresh: 0s
 
 esp8266:
   board: esp01_1m
@@ -29,7 +29,8 @@ wifi:
     password: "qwertyzxc"
 
 ota:
-  password: !secret ota_password
+  - platform: esphome
+    password: !secret ota_password
 
 #web_server:
 captive_portal:
