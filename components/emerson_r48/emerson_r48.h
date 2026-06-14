@@ -52,12 +52,13 @@ class EmersonR48Component : public PollingComponent {
   }
 
   void set_control(uint8_t msgv);
+  uint8_t compute_control_byte();
 
   void sendSync();
   void sendSync2();
   void gimme5();
 
-  uint32_t lastCtlSent_;
+  uint32_t lastCtlSent_{0};
 
   bool dcOff_ = 0;
   bool fanFull_ = 0;
@@ -66,7 +67,7 @@ class EmersonR48Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  uint32_t lastUpdate_;
+  uint32_t lastUpdate_{0};
 
   sensor::Sensor *input_voltage_sensor_{nullptr};
   sensor::Sensor *input_frequency_sensor_{nullptr};
