@@ -19,37 +19,27 @@ void EmersonR48Switch::setup() {
 
 void EmersonR48Switch::write_state(bool state) {
     ESP_LOGD(TAG, "-> new switch state: %d", state);
-    uint8_t msgv = 0;
 
     switch (this->functionCode_) {
         case SET_AC_FUNCTION:
             parent_->acOff_ = state;
-            msgv = parent_->dcOff_ << 7 | parent_->fanFull_ << 4 | parent_->flashLed_ << 3 | parent_->acOff_ << 2 | 1;
-            parent_->set_control(msgv);
-            this->publish_state(state);
             break;
         case SET_DC_FUNCTION:
             parent_->dcOff_ = state;
-            msgv = parent_->dcOff_ << 7 | parent_->fanFull_ << 4 | parent_->flashLed_ << 3 | parent_->acOff_ << 2 | 1;
-            parent_->set_control(msgv);
-            this->publish_state(state);
             break;
         case SET_FAN_FUNCTION:
             parent_->fanFull_ = state;
-            msgv = parent_->dcOff_ << 7 | parent_->fanFull_ << 4 | parent_->flashLed_ << 3 | parent_->acOff_ << 2 | 1;
-            parent_->set_control(msgv);
-            this->publish_state(state);
             break;
         case SET_LED_FUNCTION:
             parent_->flashLed_ = state;
-            msgv = parent_->dcOff_ << 7 | parent_->fanFull_ << 4 | parent_->flashLed_ << 3 | parent_->acOff_ << 2 | 1;
-            parent_->set_control(msgv);
-            this->publish_state(state);
             break;
 
         default:
-        break;
+            return;
     }
+
+    parent_->set_control(parent_->compute_control_byte());
+    this->publish_state(state);
 }
 
 void EmersonR48Switch::dump_config(){
