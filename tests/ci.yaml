@@ -50,6 +50,8 @@ sensor:
       name: AC Voltage
     max_output_current:
       name: DC Max Current
+    efficiency:
+      name: Efficiency
 
 number:
   - platform: emerson_r48

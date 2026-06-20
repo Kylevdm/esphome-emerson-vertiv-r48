@@ -38,11 +38,11 @@ static const uint8_t EMR48_DATA_OUTPUT_A = 0x02;
 static const uint8_t EMR48_DATA_OUTPUT_AL = 0x03;
 static const uint8_t EMR48_DATA_OUTPUT_T = 0x04;
 static const uint8_t EMR48_DATA_OUTPUT_IV = 0x05;
+static const uint8_t EMR48_DATA_EFFICIENCY = 0x20;
 /*
 static const uint8_t EMR48_DATA_INPUT_FREQ = 0x17;
 static const uint8_t EMR48_DATA_INPUT_POWER = 0x18;
 static const uint8_t EMR48_DATA_INPUT_TEMP = 0x19;
-static const uint8_t EMR48_DATA_EFFICIENCY = 0x20;
 static const uint8_t EMR48_DATA_INPUT_CURRENT = 0x21;
 static const uint8_t EMR48_DATA_OUTPUT_POWER = 0x22;
 */
@@ -121,6 +121,11 @@ void EmersonR48Component::update() {
     std::vector<uint8_t> data = {0x01, 0xF0, 0x00, EMR48_DATA_OUTPUT_IV, 0x00, 0x00, 0x00, 0x00};
     this->canbus->send_data(CAN_ID_REQUEST, true, data);
   }
+  if (cnt == 6) {
+    ESP_LOGD(TAG, "Requesting efficiency message");
+    std::vector<uint8_t> data = {0x01, 0xF0, 0x00, EMR48_DATA_EFFICIENCY, 0x00, 0x00, 0x00, 0x00};
+    this->canbus->send_data(CAN_ID_REQUEST, true, data);
+  }
 //  if (cnt == 6) {
 //    ESP_LOGD(TAG, "Requesting all 5 message");
 //    std::vector<uint8_t> data = {0x00, 0xF0, 0x00, 0x80, 0x46, 0xA5, 0x34, 0x00};
@@ -163,7 +168,7 @@ void EmersonR48Component::update() {
     std::vector<uint8_t> data = {0x01, 0xF0, 0x00, EMR48_DATA_OUTPUT_POWER, 0x00, 0x00, 0x00, 0x00};
     this->canbus->send_data(CAN_ID_REQUEST, true, data);
   }*/
-  if (cnt == 6) {
+  if (cnt == 7) {
     cnt = 0;
     uint8_t msgv = this->dcOff_ << 7 | this->fanFull_ << 4 | this->flashLed_ << 3 | this->acOff_ << 2 | 1;
     this->set_control(msgv);
@@ -392,7 +397,13 @@ void EmersonR48Component::on_frame(uint32_t can_id, bool rtr, const std::vector<
         //conv_value = value / 1.0;
         this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
         ESP_LOGD(TAG, "Input voltage: %f", conv_value);
-        
+
+        break;
+
+      case EMR48_DATA_EFFICIENCY:
+        // ponytail: published raw; rectifier may report a 0-1 fraction needing *100 for percent — confirm against hardware and scale here if so
+        this->publish_sensor_state_(this->efficiency_sensor_, conv_value);
+        ESP_LOGD(TAG, "Efficiency: %f", conv_value);
         break;
 
 /*
