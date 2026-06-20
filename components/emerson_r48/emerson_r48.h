@@ -54,10 +54,7 @@ class EmersonR48Component : public PollingComponent {
   void set_control(uint8_t msgv);
 
   void sendSync();
-  void sendSync2();
   void gimme5();
-
-  uint32_t lastCtlSent_;
 
   bool dcOff_ = 0;
   bool fanFull_ = 0;
